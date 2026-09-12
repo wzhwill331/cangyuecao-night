@@ -6,6 +6,13 @@
 
 本地直接用浏览器打开 `index.html` 即可（无需构建）。
 
+## 部署网站（GitHub Pages）
+
+1. 进入仓库 `Settings -> Pages`
+2. 在 **Build and deployment** 里将 **Source** 设为 **GitHub Actions**
+3. 推送到 `main` 分支后会自动触发部署
+4. 部署完成后，站点地址为：`https://<你的用户名>.github.io/cangyuecao-night/`
+
 ## 功能
 
 - 四路 Web Audio 合成夜声（无外链音频文件）
