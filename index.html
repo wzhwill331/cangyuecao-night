@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>苍月草 · 夜息</title>
+  <meta name="description" content="月色下的白噪音助眠台：草风、远雨、夜虫、瓣落可混。" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="app">
+  <a class="skip-link" href="#stage">跳到主要内容</a>
+
+  <canvas id="petal-canvas" class="petal-canvas" aria-hidden="true"></canvas>
+  <div class="cursor-glow" id="cursor-glow" aria-hidden="true"></div>
+
+  <header class="app-header">
+    <div class="brand-orb" aria-label="苍月草">
+      <svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true">
+        <circle cx="24" cy="24" r="22" fill="rgba(10,18,24,0.55)" stroke="rgba(201,180,138,0.45)" stroke-width="1"/>
+        <path d="M24 34 C22 28 18 24 14 22 C20 22 23 26 24 34 Z" fill="#7fb89a" opacity="0.9"/>
+        <path d="M24 34 C24 26 24 20 26 16 C27 22 26 28 24 34 Z" fill="#a8c9b8" opacity="0.95"/>
+        <path d="M24 34 C26 27 30 23 34 21 C29 23 26 28 24 34 Z" fill="#2f6b55" opacity="0.9"/>
+        <circle cx="34" cy="14" r="2.2" fill="#c9b48a"/>
+      </svg>
+    </div>
+
+    <nav class="panel-tabs" role="tablist" aria-label="板块切换">
+      <button type="button" class="panel-tab is-active" role="tab" id="tab-night" aria-selected="true" aria-controls="panel-night" data-panel="night">草海</button>
+      <button type="button" class="panel-tab" role="tab" id="tab-mix" aria-selected="false" aria-controls="panel-mix" data-panel="mix">声层</button>
+      <button type="button" class="panel-tab" role="tab" id="tab-breath" aria-selected="false" aria-controls="panel-breath" data-panel="breath">呼息</button>
+      <button type="button" class="panel-tab" role="tab" id="tab-mood" aria-selected="false" aria-controls="panel-mood" data-panel="mood">叠层</button>
+    </nav>
+
+    <button type="button" class="save-scape" id="save-scape" aria-label="保存当前声景">
+      <span class="save-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 21s-7-4.6-9.5-9A5.4 5.4 0 0 1 12 5.2 5.4 5.4 0 0 1 21.5 12C19 16.4 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      </span>
+      <span class="save-text">
+        <strong>保存声景</strong>
+        <small>Saved Soundscape</small>
+      </span>
+    </button>
+  </header>
+
+  <main class="stage" id="stage">
+    <!-- 草海：概念图主屏 -->
+    <section
+      class="panel is-active"
+      id="panel-night"
+      role="tabpanel"
+      aria-labelledby="tab-night"
+      data-panel="night"
+      tabindex="-1"
+    >
+      <div class="layer layer-back" aria-hidden="true">
+        <div class="stars"></div>
+        <div class="moon-orb moon-large"></div>
+        <div class="moon-glow moon-glow-large"></div>
+      </div>
+      <div class="layer layer-mid" aria-hidden="true">
+        <div class="layer-grass" id="night-grass-far"></div>
+      </div>
+      <div class="layer layer-mid-2" aria-hidden="true">
+        <div class="layer-grass" id="night-grass-mid"></div>
+        <div class="fern fern-left" id="night-fern-l"></div>
+        <div class="fern fern-right" id="night-fern-r"></div>
+      </div>
+      <div class="layer layer-front" aria-hidden="true">
+        <div class="layer-grass" id="night-grass-near"></div>
+      </div>
+
+      <div class="layer layer-content night-layout">
+        <div class="hero-copy">
+          <h1>夜息</h1>
+          <p class="lede">
+            月色倒映着草叶的轻声响，<br />
+            让风声、虫鸣与花瓣声，编织成安静的夜息。
+          </p>
+          <div class="hero-actions">
+            <button type="button" class="btn btn-gold btn-luxe btn-enter" id="toggle-btn">
+              <span class="btn-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+              </span>
+              <span class="btn-label">进入夜息</span>
+              <span class="btn-gloss" aria-hidden="true"></span>
+            </button>
+            <button type="button" class="btn btn-ghost btn-luxe" id="preview-btn" data-goto="mix">
+              <span class="btn-label">试听声景</span>
+              <span class="btn-edge" aria-hidden="true"></span>
+            </button>
+          </div>
+          <p class="preview-line">
+            <span class="wave" aria-hidden="true"></span>
+            夜草 · 声景预览
+            <span id="header-status" class="mono">未开始</span>
+          </p>
+        </div>
+
+        <aside class="mixer glass-panel" aria-label="声景混合器">
+          <div class="mixer-head">
+            <h2>声景混合器</h2>
+            <button type="button" class="icon-btn" id="reset-btn" aria-label="重置声景" title="重置">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v5h5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+
+          <ul class="mixer-list" id="channel-list" role="list"></ul>
+
+          <div class="mixer-master glow-field" data-glow="gold">
+            <div class="mixer-row-label">
+              <span class="vol-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 10v4h3l5 4V6L7 10H4zm12.5 2a3.5 3.5 0 0 0-2-3.2v6.4a3.5 3.5 0 0 0 2-3.2z" fill="currentColor"/></svg>
+              </span>
+              <span>主音量</span>
+            </div>
+            <input type="range" id="master" class="slider slider-gold" min="0" max="100" value="100" aria-label="主音量" />
+            <span class="mixer-val mono" id="master-val">100</span>
+          </div>
+
+          <div class="mixer-timer">
+            <p class="panel-label">定时关闭</p>
+            <p class="timer-big mono" id="timer-readout">45:00</p>
+            <div class="timer-track" role="group" aria-label="定时">
+              <button type="button" class="chip" data-timer="15">15 min</button>
+              <button type="button" class="chip" data-timer="30">30 min</button>
+              <button type="button" class="chip is-active" data-timer="45">45 min</button>
+              <button type="button" class="chip" data-timer="60">60 min</button>
+              <button type="button" class="chip" data-timer="0">自定义</button>
+            </div>
+          </div>
+
+          <div class="mixer-actions">
+            <button type="button" class="btn btn-ghost btn-luxe" id="panel-toggle">
+              <span class="btn-label">暂停</span>
+              <span class="btn-edge" aria-hidden="true"></span>
+            </button>
+            <button type="button" class="btn btn-soft btn-luxe" id="reset-btn-2">
+              <span class="btn-label">重置</span>
+            </button>
+          </div>
+          <p class="status-line" id="status-line" role="status">点「进入夜息」开始播放</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- 声层说明（切换后） -->
+    <section class="panel" id="panel-mix" role="tabpanel" aria-labelledby="tab-mix" data-panel="mix" hidden tabindex="-1">
+      <div class="layer layer-back" aria-hidden="true"><div class="mix-ambient"></div></div>
+      <div class="layer layer-mid" aria-hidden="true"><div class="layer-grass" id="mix-grass"></div></div>
+      <div class="layer layer-content">
+        <div class="sub-copy">
+          <p class="eyebrow">声层 · 图解</p>
+          <h2>四路夜声，叠在草海上</h2>
+          <p class="body-text">主屏右侧就是混音台。草风会带动画面风力；瓣落对应飘落的花瓣密度感。回到「草海」可继续调。</p>
+          <button type="button" class="btn btn-gold btn-luxe" data-goto="night">
+            <span class="btn-label">回到草海</span>
+            <span class="btn-gloss" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 呼息 -->
+    <section class="panel" id="panel-breath" role="tabpanel" aria-labelledby="tab-breath" data-panel="breath" hidden tabindex="-1">
+      <div class="layer layer-back" aria-hidden="true"><div class="breath-haze"></div></div>
+      <div class="layer layer-mid" aria-hidden="true"><div class="layer-grass" id="breath-grass"></div></div>
+      <div class="layer layer-content">
+        <div class="breath-grid">
+          <div class="breath-stage">
+            <div class="breath-ring" id="breath-ring" aria-hidden="true">
+              <div class="breath-core"></div>
+              <div class="breath-orbit"></div>
+            </div>
+            <p class="breath-phase" id="breath-phase">点「开始呼息」跟圈走</p>
+            <p class="breath-count mono" id="breath-count"></p>
+          </div>
+          <div class="breath-copy">
+            <p class="eyebrow">呼息</p>
+            <h2>四拍吸 · 七拍屏 · 八拍呼</h2>
+            <p class="body-text">跟圆环慢慢把气放长。系统开了「减弱动态效果」时只显示文字节奏。</p>
+            <button type="button" class="btn btn-ghost btn-luxe" id="breath-btn">
+              <span class="btn-label">开始呼息</span>
+              <span class="btn-edge" aria-hidden="true"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 叠层 -->
+    <section class="panel" id="panel-mood" role="tabpanel" aria-labelledby="tab-mood" data-panel="mood" hidden tabindex="-1">
+      <div class="layer layer-content mood-shell">
+        <div class="mood-head">
+          <p class="eyebrow">叠层</p>
+          <h2>同一舞台，三层动态</h2>
+          <p class="body-text">点子层强调其中一层，其它层仍在动。</p>
+          <div class="mood-subtabs" role="group" aria-label="强调层">
+            <button type="button" class="chip is-active" data-focus="back">强调远夜</button>
+            <button type="button" class="chip" data-focus="mid">强调草浪</button>
+            <button type="button" class="chip" data-focus="front">强调花瓣</button>
+          </div>
+        </div>
+        <div class="mood-stage" id="mood-stage" data-focus="back">
+          <div class="mood-layer mood-back" aria-hidden="true">
+            <div class="mood-stars"></div>
+            <div class="mood-moon"></div>
+            <p class="mood-label">L1 远夜</p>
+          </div>
+          <div class="mood-layer mood-mid" aria-hidden="true">
+            <div class="layer-grass" id="mood-grass"></div>
+            <p class="mood-label">L2 草浪</p>
+          </div>
+          <div class="mood-layer mood-front" aria-hidden="true">
+            <div class="mood-petals" id="mood-petals"></div>
+            <p class="mood-label">L3 花瓣</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="brand-corner" aria-hidden="true">
+    <svg viewBox="0 0 48 48" width="36" height="36">
+      <circle cx="24" cy="24" r="22" fill="rgba(10,18,24,0.4)" stroke="rgba(168,201,184,0.25)" stroke-width="1"/>
+      <path d="M24 34 C22 28 18 24 14 22 C20 22 23 26 24 34 Z" fill="#7fb89a"/>
+      <path d="M24 34 C24 26 24 20 26 16 C27 22 26 28 24 34 Z" fill="#a8c9b8"/>
+      <path d="M24 34 C26 27 30 23 34 21 C29 23 26 28 24 34 Z" fill="#2f6b55"/>
+    </svg>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
