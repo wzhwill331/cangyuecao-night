@@ -167,23 +167,48 @@
       <div class="layer layer-back" aria-hidden="true"><div class="breath-haze"></div></div>
       <div class="layer layer-mid" aria-hidden="true"><div class="layer-grass" id="breath-grass"></div></div>
       <div class="layer layer-content">
-        <div class="breath-grid">
+        <div class="breath-wrap">
+          <header class="breath-head">
+            <p class="eyebrow">静息 · 屏气</p>
+            <h2>四拍吸 · 七拍屏 · 八拍呼</h2>
+          </header>
+
           <div class="breath-stage">
             <div class="breath-ring" id="breath-ring" aria-hidden="true">
               <div class="breath-core"></div>
               <div class="breath-orbit"></div>
+              <div class="breath-progress" id="breath-progress"></div>
             </div>
-            <p class="breath-phase" id="breath-phase">点「开始呼息」跟圈走</p>
+            <p class="breath-phase" id="breath-phase" aria-live="polite">准备好了就开始</p>
             <p class="breath-count mono" id="breath-count"></p>
+            <div class="breath-dots" aria-hidden="true">
+              <span class="bdot is-on" data-phase="in"></span>
+              <span class="bdot" data-phase="hold"></span>
+              <span class="bdot" data-phase="out"></span>
+            </div>
           </div>
+
           <div class="breath-copy">
-            <p class="eyebrow">呼息</p>
-            <h2>四拍吸 · 七拍屏 · 八拍呼</h2>
-            <p class="body-text">跟圆环慢慢把气放长。系统开了「减弱动态效果」时只显示文字节奏。</p>
-            <button type="button" class="btn btn-ghost btn-luxe" id="breath-btn">
-              <span class="btn-label">开始呼息</span>
-              <span class="btn-edge" aria-hidden="true"></span>
-            </button>
+            <p class="body-text">圆环会按 4–7–8 起落。电脑用轻柔提示音；手机还可开震动（静音模式下也能感觉到节奏）。</p>
+            <div class="breath-toggles">
+              <label class="toggle">
+                <input type="checkbox" id="cue-sound" checked />
+                <span class="toggle-ui" aria-hidden="true"></span>
+                <span>声音提示</span>
+              </label>
+              <label class="toggle is-mobile-only">
+                <input type="checkbox" id="cue-vibe" checked />
+                <span class="toggle-ui" aria-hidden="true"></span>
+                <span>震动提示</span>
+              </label>
+            </div>
+            <div class="breath-actions">
+              <button type="button" class="btn btn-gold btn-luxe btn-breath" id="breath-btn">
+                <span class="btn-label">开始呼息</span>
+                <span class="btn-gloss" aria-hidden="true"></span>
+              </button>
+            </div>
+            <p class="breath-hint" id="breath-hint" role="status">吸 4 · 屏 7 · 呼 8，一轮约 19 秒</p>
           </div>
         </div>
       </div>

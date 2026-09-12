@@ -953,44 +953,158 @@
     });
   }
 
-  /* breath */
-  const breath = { on: false, stepTimer: 0, countTimer: 0 };
+  /* breath: 4-7-8 with sound + optional vibration */
+  const breath = {
+    on: false,
+    stepTimer: 0,
+    countTimer: 0,
+    progressTimer: 0,
+    phase: "idle",
+    cycle: 0,
+  };
+
+  function isMobileLike() {
+    return (
+      /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+      (navigator.maxTouchPoints > 1 && window.innerWidth < 900)
+    );
+  }
+
+  function ensureAudioCtx() {
+    ensureAudio();
+    if (audio.ctx && audio.ctx.state === "suspended") audio.ctx.resume();
+    return audio.ctx;
+  }
+
+  function playCue(kind) {
+    const soundOn = !$("cue-sound") || $("cue-sound").checked;
+    const vibeEl = $("cue-vibe");
+    const vibeOn = vibeEl ? vibeEl.checked : false;
+    const ctx = ensureAudioCtx();
+
+    if (soundOn && ctx) {
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.value = 1200;
+      osc.type = "sine";
+      if (kind === "in") {
+        osc.frequency.setValueAtTime(392, now);
+        osc.frequency.linearRampToValueAtTime(523.25, now + 0.35);
+      } else if (kind === "hold") {
+        osc.frequency.setValueAtTime(440, now);
+      } else if (kind === "out") {
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.linearRampToValueAtTime(293.66, now + 0.45);
+      } else {
+        osc.frequency.setValueAtTime(330, now);
+      }
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(0.045, now + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.7);
+      osc.connect(filter);
+      filter.connect(g);
+      g.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.75);
+    }
+
+    if (vibeOn && isMobileLike() && navigator.vibrate) {
+      if (kind === "in") navigator.vibrate([30, 40, 30]);
+      else if (kind === "hold") navigator.vibrate(180);
+      else if (kind === "out") navigator.vibrate(45);
+      else navigator.vibrate(20);
+    }
+  }
+
+  function setPhaseDots(phase) {
+    document.querySelectorAll(".bdot").forEach(function (d) {
+      d.classList.toggle("is-on", d.getAttribute("data-phase") === phase);
+    });
+  }
+
+  function setBreathProgress(pct) {
+    const el = $("breath-progress");
+    if (!el) return;
+    const deg = Math.max(0, Math.min(360, pct * 3.6));
+    el.style.background =
+      "conic-gradient(from -90deg, rgba(201,180,138,0.75) 0deg, rgba(201,180,138,0.75) " +
+      deg +
+      "deg, rgba(127,184,154,0.08) " +
+      deg +
+      "deg, rgba(127,184,154,0.08) 360deg)";
+  }
 
   function setBreathPhase(phase, seconds) {
+    breath.phase = phase;
     const ring = $("breath-ring");
     const label = $("breath-phase");
     const countEl = $("breath-count");
+    const hint = $("breath-hint");
+
     if (ring) {
       ring.classList.remove("is-inhale", "is-hold", "is-exhale");
       if (phase === "in") ring.classList.add("is-inhale");
       if (phase === "hold") ring.classList.add("is-hold");
       if (phase === "out") ring.classList.add("is-exhale");
     }
-    const text = phase === "in" ? "吸气" : phase === "hold" ? "屏息" : phase === "out" ? "呼气" : "点「开始呼息」跟圈走";
-    if (label) label.textContent = text;
+    setPhaseDots(phase === "idle" ? "in" : phase);
+
+    const textMap = {
+      in: "吸气",
+      hold: "屏气 · 静息",
+      out: "呼气",
+      idle: "准备好了就开始",
+    };
+    if (label) label.textContent = textMap[phase] || "";
+    if (hint) {
+      if (!breath.on) hint.textContent = "吸 4 · 屏 7 · 呼 8，一轮约 19 秒";
+      else if (phase === "in") hint.textContent = "用鼻子慢慢吸满 4 秒";
+      else if (phase === "hold") hint.textContent = "轻轻屏住 7 秒，肩颈放松";
+      else if (phase === "out") hint.textContent = "嘴巴或鼻子缓缓呼尽 8 秒";
+    }
+
     let left = seconds;
     if (countEl) countEl.textContent = left > 0 ? String(left) : "";
     clearInterval(breath.countTimer);
+    clearInterval(breath.progressTimer);
+
     if (seconds > 0 && breath.on) {
+      let elapsed = 0;
       breath.countTimer = setInterval(function () {
         left -= 1;
         if (left <= 0) {
           clearInterval(breath.countTimer);
           if (countEl) countEl.textContent = "";
-        } else if (countEl) countEl.textContent = String(left);
+        } else if (countEl) {
+          countEl.textContent = String(left);
+        }
       }, 1000);
+      breath.progressTimer = setInterval(function () {
+        elapsed += 0.05;
+        setBreathProgress(Math.min(1, elapsed / seconds) * 100);
+      }, 50);
+      setBreathProgress(0);
+    } else {
+      setBreathProgress(0);
     }
   }
 
   function breathCycle() {
     if (!breath.on) return;
+    breath.cycle += 1;
+    playCue("in");
     setBreathPhase("in", 4);
     clearTimeout(breath.stepTimer);
     breath.stepTimer = setTimeout(function () {
       if (!breath.on) return;
+      playCue("hold");
       setBreathPhase("hold", 7);
       breath.stepTimer = setTimeout(function () {
         if (!breath.on) return;
+        playCue("out");
         setBreathPhase("out", 8);
         breath.stepTimer = setTimeout(breathCycle, 8000);
       }, 7000);
@@ -1004,12 +1118,21 @@
       const span = btn.querySelector(".btn-label");
       const next = breath.on ? "结束呼息" : "开始呼息";
       if (span) span.textContent = next;
-      else btn.textContent = next;
+      btn.classList.toggle("btn-gold", true);
+      btn.classList.toggle("is-playing", breath.on);
     }
-    if (breath.on) breathCycle();
-    else {
+    if (isMobileLike()) {
+      const vibeWrap = document.querySelector(".toggle.is-mobile-only");
+      if (vibeWrap) vibeWrap.style.display = "";
+    }
+    if (breath.on) {
+      ensureAudioCtx();
+      if ($("cue-vibe") && $("cue-vibe").checked && navigator.vibrate) navigator.vibrate(25);
+      breathCycle();
+    } else {
       clearTimeout(breath.stepTimer);
       clearInterval(breath.countTimer);
+      clearInterval(breath.progressTimer);
       setBreathPhase("idle", 0);
     }
   }
